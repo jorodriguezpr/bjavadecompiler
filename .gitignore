@@ -1,0 +1,8 @@
+node_modules/
+dist/
+tools/*.jar
+data/
+logs/
+*.log
+.env
+coverage/

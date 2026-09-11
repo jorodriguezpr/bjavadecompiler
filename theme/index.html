@@ -1,0 +1,199 @@
+<!--
+  BJavaDecompiler
+  Copyright 2026 Jose Rodriguez <jrpcone@gmail.com>
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+  Developer: Jose Rodriguez <jrpcone@gmail.com>
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BJavaDecompiler</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">BJavaDecompiler</div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-view="upload">New Job</button>
+      <button class="tab-btn" data-view="jobs">Jobs</button>
+      <button class="tab-btn" data-view="tools">Tool Setup</button>
+      <button class="tab-btn" data-view="about">About</button>
+    </nav>
+  </header>
+
+  <main id="app">
+
+    <section id="view-upload" class="view active">
+      <div class="card">
+        <h2>Decompile a WAR or JAR</h2>
+        <div id="toolStatusBanner" class="banner hidden"></div>
+        <div class="field-row">
+          <label for="targetJavaVersion">Target Java version</label>
+          <select id="targetJavaVersion">
+            <option value="auto">Auto-detect (bytecode-based)</option>
+            <option value="8">Java 8</option>
+            <option value="11">Java 11</option>
+            <option value="17">Java 17</option>
+            <option value="21">Java 21</option>
+          </select>
+        </div>
+        <div id="dropzone" class="dropzone">
+          <p>Drag &amp; drop a .war or .jar file here, or click to choose one.</p>
+          <input type="file" id="fileInput" accept=".war,.jar" hidden>
+        </div>
+        <div id="uploadProgress" class="progress hidden">
+          <div class="progress-bar" id="uploadProgressBar"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-jobs" class="view">
+      <div class="card">
+        <div class="job-header">
+          <h2>Jobs</h2>
+          <div class="job-actions">
+            <button id="btnClearAllJobs" class="btn btn-danger">Clear All Jobs</button>
+          </div>
+        </div>
+        <table class="table" id="jobsTable">
+          <thead><tr><th>File</th><th>Status</th><th>Created</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="view-job-detail" class="view">
+      <div class="card">
+        <div class="job-header">
+          <h2 id="jobDetailTitle">Job</h2>
+          <div class="job-actions">
+            <button id="btnPause" class="btn">Pause</button>
+            <button id="btnResume" class="btn">Resume</button>
+            <button id="btnCancel" class="btn btn-danger">Cancel</button>
+            <button id="btnDownload" class="btn btn-primary">Download ZIP</button>
+            <button id="btnBrowse" class="btn">Browse Project</button>
+            <button id="btnDownloadOriginal" class="btn">Download Original</button>
+          </div>
+        </div>
+
+        <div id="stepper" class="stepper"></div>
+
+        <div id="currentActivity" class="current-activity" hidden>
+          <span class="current-activity-dot"></span>
+          <code id="currentActivityText"></code>
+        </div>
+
+        <div class="grid">
+          <div>
+            <h3>Per-class status <span id="classCount" class="muted"></span></h3>
+            <input type="text" id="classSearch" placeholder="Search classes..." class="text-input">
+            <div id="classList" class="class-list"></div>
+            <h3>Dependencies</h3>
+            <div id="dependencyPanel" class="dependency-panel"></div>
+          </div>
+          <div>
+            <h3>Detected frameworks <span id="frameworkCount" class="muted"></span></h3>
+            <div id="frameworkPanel" class="framework-panel"></div>
+            <h3>Build verification</h3>
+            <div id="buildPanel" class="build-panel"></div>
+            <h3>Missing packages <span id="missingPackageCount" class="muted"></span></h3>
+            <div id="missingPackagePanel" class="missing-package-panel"></div>
+            <h3>Pruned unfixable classes <span id="excludedFileCount" class="muted"></span></h3>
+            <div id="excludedFilePanel" class="missing-package-panel"></div>
+            <h3>Log</h3>
+            <div id="jobLog" class="job-log"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-browse" class="view">
+      <div class="card">
+        <h2>Generated Project</h2>
+        <div class="grid">
+          <div id="fileTree" class="file-tree"></div>
+          <pre id="fileContent" class="file-content">Select a file to view its contents.</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-tools" class="view">
+      <div class="card">
+        <div class="job-header">
+          <h2>Tool Setup</h2>
+          <div class="job-actions">
+            <button id="btnReloadEnv" class="btn">Reload .env</button>
+          </div>
+        </div>
+        <div id="reloadEnvResult" class="reload-env-result" hidden></div>
+        <div id="toolchainStatus" class="tool-grid"></div>
+        <h3>Decompiler engines</h3>
+        <div id="engineStatus" class="tool-grid"></div>
+        <h3>AI provider</h3>
+        <div id="aiStatus" class="tool-grid"></div>
+        <div>
+          <button id="btnTestAi" class="btn">Test Connection</button>
+        </div>
+        <div id="aiTestResult" class="reload-env-result" hidden></div>
+
+        <div id="aiDelegationPanel" class="ai-delegation-panel" hidden>
+          <h3>AI Delegation worker setup</h3>
+          <p class="muted">Copy this key into AiWindowsAssistant's <code>.env</code> as
+            <code>BJAVADECOMPILER_URL=<span id="aiDelegationSelfUrl"></span></code> and
+            <code>BJAVADECOMPILER_WORKER_API_KEY=&lt;key below&gt;</code>. It polls this app,
+            runs each prompt through your local, authenticated Claude Code CLI, and posts the
+            result back — nothing here ever talks to Claude Code directly.</p>
+          <div class="ai-delegation-key-row">
+            <code id="aiDelegationKeyValue" class="ai-delegation-key">••••••••••••••••</code>
+            <button id="btnRevealDelegationKey" class="btn">Reveal</button>
+            <button id="btnCopyDelegationKey" class="btn">Copy</button>
+            <button id="btnRegenerateDelegationKey" class="btn btn-danger">Regenerate</button>
+          </div>
+        </div>
+
+        <h3>Speed/feature toggles <span class="muted">(AI_ENABLED, DECOMPILE_ENGINES, DECOMPILE_UNRESOLVED_LIBS, DECOMPILE_PARALLEL in .env)</span></h3>
+        <div id="speedNotes" class="speed-notes"></div>
+
+        <h3>Cache</h3>
+        <p class="muted">Clears the dependency-resolution cache and the decompiled+AI-cleaned
+          unresolved-library cache. Both rebuild automatically as needed, but re-running the same
+          file can get a WORSE result than a fresh run if either one is holding output from an
+          earlier, since-fixed version of the pipeline — clear this if a re-run looks wrong.</p>
+        <button id="btnClearCache" class="btn btn-danger">Clear Cache</button>
+
+        <h3>Settings <span class="muted">— edits write directly to .env and apply immediately (no restart needed, except where noted)</span></h3>
+        <form id="envSettingsForm" class="env-settings-form"></form>
+        <button id="btnSaveEnv" class="btn btn-primary">Save Settings</button>
+      </div>
+    </section>
+
+    <section id="view-about" class="view">
+      <div class="card">
+        <h2>About</h2>
+        <div id="aboutPanel" class="about-panel"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <span id="footerCredit">BJavaDecompiler</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
